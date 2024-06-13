@@ -54,4 +54,4 @@ def get_prediction(cropped_imageb64):
     if not result:
         prediction = "Anemia"
     
-    return {"status": "Successful", "prediction": prediction}
+    return prediction
