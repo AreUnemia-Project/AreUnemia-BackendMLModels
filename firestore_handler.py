@@ -20,11 +20,11 @@ class Predictions(BaseModel):
     predictionResult: str
 
 class PredictionsResponse(BaseModel):
-    predictionID: str
+    predictionId: str
+    result: str
+    createdAt: datetime
     eyePhotoUrl: str
     questionnaireAnswers: Dict[str, str]
-    predictionResult: str
-    createdAt: datetime
 
 async def save_prediction(user_id: str, prediction: Predictions, file: UploadFile = File(...)):
     try:
@@ -49,7 +49,7 @@ async def save_prediction(user_id: str, prediction: Predictions, file: UploadFil
         }
 
         prediction_doc.set(prediction_data)
-        return {"status": "success", "message": "Prediction added successfully", "predictionID": prediction_id}
+        return {"status": "success", "message": "Prediction added successfully", "data": {"predictionId" : prediction_id}}
     except Exception as error:
         raise HTTPException(status_code=500, detail=f"Failed to add prediction: {str(error)}")
     
@@ -65,7 +65,17 @@ async def retrieve_predictions_history(user_id: str, prediction_id: str):
             raise HTTPException(status_code=404, detail="Prediction not found")
         
         prediction_data = prediction_doc.to_dict()
-        return prediction_data
+        prediction_data['predictionID'] = prediction_id
+
+        response = PredictionsResponse (
+            predictionId=prediction_data['predictionID'],
+            result=prediction_data['predictionResult'],
+            createdAt=prediction_data['createdAt'],
+            eyePhotoUrl=prediction_data['eyePhoto'],
+            questionnaireAnswers=prediction_data['questionnaireAnswers']
+        )
+
+        return {"status": "success", "message": "Successfully retrieved user's prediction history", "data": response}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve prediction: {str(e)}")
     
@@ -78,12 +88,23 @@ async def retrieve_all_predictions_history(user_id: str):
         prediction_docs = predictions_ref.stream()
 
         predictions = []
+
         for doc in prediction_docs:
             data = doc.to_dict()
             data['predictionID'] = doc.id
-            predictions.append(data)
+            response = PredictionsResponse (
+                predictionId=data['predictionID'],
+                result=data['predictionResult'],
+                createdAt=data['createdAt'],
+                eyePhotoUrl=data['eyePhoto'],
+                questionnaireAnswers=data['questionnaireAnswers']
+            )
+            predictions.append(response)
         
-        return predictions
+        if len(predictions) == 0:
+            raise HTTPException(status_code=400, detail=f"User has no predictions")
+        
+        return {"status": "success", "message": "Successfully retrieved all user's predictions histories", "data": predictions}
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve prediction: {str(e)}")
