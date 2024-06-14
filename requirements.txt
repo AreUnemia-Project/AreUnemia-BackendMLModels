@@ -95,7 +95,7 @@ tbb==2021.12.0
 tensorboard==2.16.2
 tensorboard-data-server==0.7.2
 tensorflow==2.16.1
-tensorflow-intel==2.16.1
+tensorflow-intel
 termcolor==2.4.0
 torch==2.3.1
 torchvision==0.18.1

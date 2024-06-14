@@ -3,15 +3,23 @@ from google.cloud import firestore, storage
 from pydantic import BaseModel
 from typing import Dict, List
 from datetime import datetime
+from dotenv import load_dotenv
 import os
 import uuid
+import json
 
-firestore_credentials = "./config/areunemia-capstone-d3e5724eaec5.json"
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = firestore_credentials
-firestore_db = firestore.Client()
+load_dotenv()
 
-storage_credentials = "./config/areunemia-capstone-afc31e2de9ae.json"
-storage_client = storage.Client.from_service_account_json(storage_credentials)
+firestore_credentials = os.getenv("FIRESTORE_CREDENTIALS")
+storage_credentials = os.getenv("STORAGE_CREDENTIALS")
+
+with open(firestore_credentials) as f:
+    firestore_creds = json.load(f)
+firestore_db = firestore.Client.from_service_account_info(firestore_creds)
+
+with open(storage_credentials) as f:
+    storage_creds = json.load(f)
+storage_client = storage.Client.from_service_account_info(storage_creds)
 bucket_name = "model-ml-areunemia"
 bucket = storage_client.bucket(bucket_name)
 
