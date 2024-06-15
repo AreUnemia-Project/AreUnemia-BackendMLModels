@@ -45,7 +45,7 @@ def get_prediction(cropped_imageb64, questionnaire_answers_dict):
     predict_result = predict_model.predict(input_image)
     result = predict_result.argmax(axis=1)
 
-    # 1: Not Anemia (default), 0: Anemia
+    # 1: Healthy (default), 0: (Mild (default), Moderate, Severe)
     prediction = "Healthy"
     if not result:
 

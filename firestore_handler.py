@@ -56,60 +56,47 @@ async def save_prediction(user_id: str, prediction: Predictions, file: UploadFil
         prediction_doc.set(prediction_data)
         return {"status": "success", "message": "Prediction added successfully", "data": {"result" : prediction.predictionResult}}
     except Exception as error:
-        raise HTTPException(status_code=500, detail=f"Failed to add prediction: {str(error)}")
+        raise HTTPException(status_code=500, detail=f"{str(error)}")
     
 async def retrieve_predictions_history(user_id: str, prediction_id: str):
-    try:
-        if not user_id or not prediction_id:
-            raise HTTPException(status_code=400, detail="Missing required fields")
-        
-        predictions_ref = firestore_db.collection("users").document(user_id).collection("predictions").document(prediction_id)
-        prediction_doc = predictions_ref.get()
+    predictions_ref = firestore_db.collection("users").document(user_id).collection("predictions").document(prediction_id)
+    prediction_doc = predictions_ref.get()
 
-        if not prediction_doc.exists:
+    if not prediction_doc.exists:
             raise HTTPException(status_code=404, detail="Prediction not found")
-        
-        prediction_data = prediction_doc.to_dict()
-        prediction_data['predictionID'] = prediction_id
+    
+    prediction_data = prediction_doc.to_dict()
+    prediction_data['predictionID'] = prediction_id
 
-        response = PredictionsResponse (
-            predictionId=prediction_data['predictionID'],
-            result=prediction_data['predictionResult'],
-            createdAt=prediction_data['createdAt'],
-            eyePhotoUrl=prediction_data['eyePhoto'],
-            questionnaireAnswers=prediction_data['questionnaireAnswers']
-        )
+    sorted_questionnaire_answers = dict(sorted(prediction_data['questionnaireAnswers'].items(), key=lambda item: int(item[0].replace('question', ''))))
 
-        return {"status": "success", "message": "Successfully retrieved user's prediction history", "data": response}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to retrieve prediction: {str(e)}")
+    response = PredictionsResponse (
+        predictionId=prediction_data['predictionID'],
+        result=prediction_data['predictionResult'],
+        createdAt=prediction_data['createdAt'],
+        eyePhotoUrl=prediction_data['eyePhoto'],
+        questionnaireAnswers=sorted_questionnaire_answers
+    )
+
+    return {"status": "success", "message": "Successfully retrieved user's prediction history", "data": response}
     
 async def retrieve_all_predictions_history(user_id: str):
-    try:
-        if not user_id:
-            raise HTTPException(status_code=400, detail="Missing required fields")
-        
-        predictions_ref = firestore_db.collection("users").document(user_id).collection("predictions")
-        prediction_docs = predictions_ref.stream()
+    predictions_ref = firestore_db.collection("users").document(user_id).collection("predictions")
+    prediction_docs = predictions_ref.stream()
 
-        predictions = []
-
-        for doc in prediction_docs:
-            data = doc.to_dict()
-            data['predictionID'] = doc.id
-            response = PredictionsResponse (
-                predictionId=data['predictionID'],
-                result=data['predictionResult'],
-                createdAt=data['createdAt'],
-                eyePhotoUrl=data['eyePhoto'],
-                questionnaireAnswers=data['questionnaireAnswers']
-            )
-            predictions.append(response)
-        
-        if len(predictions) == 0:
-            raise HTTPException(status_code=400, detail=f"User has no predictions")
-        
-        return {"status": "success", "message": "Successfully retrieved all user's predictions histories", "data": predictions}
+    predictions = []
     
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to retrieve prediction: {str(e)}")
+    for doc in prediction_docs:
+        data = doc.to_dict()
+        data['predictionID'] = doc.id
+        sorted_questionnaire_answers = dict(sorted(data['questionnaireAnswers'].items(), key=lambda item: int(item[0].replace('question', ''))))
+        response = PredictionsResponse (
+            predictionId=data['predictionID'],
+            result=data['predictionResult'],
+            createdAt=data['createdAt'],
+            eyePhotoUrl=data['eyePhoto'],
+            questionnaireAnswers=sorted_questionnaire_answers
+        )
+        predictions.append(response)
+    
+    return {"status": "success", "message": "Successfully retrieved all user's predictions histories", "data": predictions}
