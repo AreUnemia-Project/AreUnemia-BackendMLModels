@@ -3,12 +3,9 @@ from google.cloud import firestore, storage
 from pydantic import BaseModel
 from typing import Dict, List
 from datetime import datetime
-from dotenv import load_dotenv
 import os
 import uuid
 import json
-
-load_dotenv()
 
 firestore_credentials = os.getenv("FIRESTORE_CREDENTIALS")
 storage_credentials = os.getenv("STORAGE_CREDENTIALS")
@@ -57,7 +54,7 @@ async def save_prediction(user_id: str, prediction: Predictions, file: UploadFil
         }
 
         prediction_doc.set(prediction_data)
-        return {"status": "success", "message": "Prediction added successfully", "data": {"predictionId" : prediction_id}}
+        return {"status": "success", "message": "Prediction added successfully", "data": {"result" : prediction.predictionResult}}
     except Exception as error:
         raise HTTPException(status_code=500, detail=f"Failed to add prediction: {str(error)}")
     

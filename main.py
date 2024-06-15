@@ -17,7 +17,6 @@ async def predict(
     user_id: str = Form(...), 
     eye_photo: UploadFile = File(...),
     questionnaire_answers: str = Form(...)):
-
     if not eye_photo or not user_id or not questionnaire_answers:
         raise HTTPException(status_code=400, detail="Missing fields required")
     
@@ -33,7 +32,7 @@ async def predict(
 
     try:
         cropped_image = segmentation_crop_image(b64imgstr)
-        prediction_res = get_prediction(cropped_image)
+        prediction_res = get_prediction(cropped_image, questionnaireAnswers_dict)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Prediction processing failed: {str(e)}")
     

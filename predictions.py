@@ -3,6 +3,7 @@ import cv2
 from ultralytics import YOLO
 from shapely.geometry import Polygon
 from keras.models import load_model
+from fastapi import HTTPException
 
 def segmentation_crop_image(b64imgstr):
     # Decode base64 string to image
@@ -29,7 +30,9 @@ def segmentation_crop_image(b64imgstr):
 
         return cropped_image_base64
 
-def get_prediction(cropped_imageb64):
+def get_prediction(cropped_imageb64, questionnaire_answers_dict):
+    if len(questionnaire_answers_dict) > 10:
+        raise HTTPException(status_code=400, detail=f"Invalid length of questionnaire") 
     cropped_image_bytes = base64.b64decode(cropped_imageb64)
     cropped_image_array = np.frombuffer(cropped_image_bytes, dtype=np.uint8)
     cropped_image = cv2.imdecode(cropped_image_array, cv2.IMREAD_COLOR)
@@ -43,8 +46,36 @@ def get_prediction(cropped_imageb64):
     result = predict_result.argmax(axis=1)
 
     # 1: Not Anemia (default), 0: Anemia
-    prediction = "Not Anemia"
+    prediction = "Healthy"
     if not result:
-        prediction = "Anemia"
-    
+
+        # Mild (default), Moderate, Severe
+        prediction = "Mild"
+
+        weights = {
+            "question1": 3,
+            "question2": 2,
+            "question3": 2,
+            "question4": 2,
+            "question5": 2,
+            "question6": 1,
+            "question7": 1,
+            "question8": 1,
+            "question9": 1,
+            "question10": 2
+        }
+
+        total_weight = 16
+        score = 0
+        for question, answer in questionnaire_answers_dict.items():
+            if answer == "Yes":
+                score += weights[question]
+        score_percentage = (score / total_weight) * 100
+
+        if score_percentage <= 33:
+            prediction = "Mild"
+        elif 33 < score_percentage <= 67:
+            prediction = "Moderate"
+        else:
+            prediction = "Severe"
     return prediction
