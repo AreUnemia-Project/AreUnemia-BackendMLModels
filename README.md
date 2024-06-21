@@ -63,5 +63,5 @@ Deployment URL: https://fastapi-app-3cv52zngvq-et.a.run.app
 | Endpoint | Parameter | Body | Method    | Description                |
 | :--------|:-------- | :------- |:------- | :------------------------- |
 | /api/predict |`-`| eye_photo, questionnaire_answers| `POST` | Submit Prediction |
-| /api/predict/history | prediction_id |`-`| `GET` | Retrieve Users' Prediction History from Prediction ID |
+| /api/predict/history/{prediction_id} | prediction_id |`-`| `GET` | Retrieve Users' Prediction History from Prediction ID |
 | /api/predict/history |`-`|`-`| `GET` | Retrieve Users' All Prediction Histories |
